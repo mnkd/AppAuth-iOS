@@ -145,7 +145,10 @@ NS_ASSUME_NONNULL_BEGIN
     NSString *testURLString = [NSString stringWithFormat:@"%@://example.com", _canOpenURLScheme];
     NSURL *testURL = [NSURL URLWithString:testURLString];
     if (![[UIApplication sharedApplication] canOpenURL:testURL]) {
-      [[UIApplication sharedApplication] openURL:_appStoreURL];
+      // Workaround: build error on visionOS: 'openURL:' is unavailable: not available on visionOS
+      [[UIApplication sharedApplication] openURL:_appStoreURL options: @{}  completionHandler:^(BOOL success) {
+        //
+      }];
       return NO;
     }
   }
@@ -153,8 +156,14 @@ NS_ASSUME_NONNULL_BEGIN
   // Transforms the request URL and opens it.
   NSURL *requestURL = [request externalUserAgentRequestURL];
   requestURL = _URLTransformation(requestURL);
-  BOOL openedInBrowser = [[UIApplication sharedApplication] openURL:requestURL];
-  return openedInBrowser;
+  // BOOL openedInBrowser = [[UIApplication sharedApplication] openURL:requestURL];
+  // return openedInBrowser;
+
+  // Workaround: build error on visionOS: 'openURL:' is unavailable: not available on visionOS
+  [[UIApplication sharedApplication] openURL:requestURL options: @{}  completionHandler:^(BOOL success) {
+    //
+  }];
+  return TRUE;
 }
 
 - (void)dismissExternalUserAgentAnimated:(BOOL)animated
