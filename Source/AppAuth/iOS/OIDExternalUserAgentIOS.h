@@ -24,7 +24,7 @@
 
 #import "OIDExternalUserAgent.h"
 
-@class SFSafariViewController;
+//@class SFSafariViewController;
 
 NS_ASSUME_NONNULL_BEGIN
 
