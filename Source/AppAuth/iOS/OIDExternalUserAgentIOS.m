@@ -18,7 +18,7 @@
 
 #import <TargetConditionals.h>
 
-#if TARGET_OS_IOS || TARGET_OS_MACCATALYST
+#if TARGET_OS_IOS || TARGET_OS_MACCATALYST || TARGET_OS_VISION
 
 #import "OIDExternalUserAgentIOS.h"
 
@@ -34,7 +34,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 130000
-@interface OIDExternalUserAgentIOS ()<SFSafariViewControllerDelegate, ASWebAuthenticationPresentationContextProviding>
+@interface OIDExternalUserAgentIOS ()<ASWebAuthenticationPresentationContextProviding>
 @end
 #else
 @interface OIDExternalUserAgentIOS ()<SFSafariViewControllerDelegate>
@@ -49,8 +49,8 @@ NS_ASSUME_NONNULL_BEGIN
   __weak id<OIDExternalUserAgentSession> _session;
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpartial-availability"
-  __weak SFSafariViewController *_safariVC;
-  SFAuthenticationSession *_authenticationVC;
+//  __weak SFSafariViewController *_safariVC;
+//  SFAuthenticationSession *_authenticationVC;
   ASWebAuthenticationSession *_webAuthenticationVC;
 #pragma clang diagnostic pop
 }
@@ -135,50 +135,50 @@ NS_ASSUME_NONNULL_BEGIN
     }
   }
   // iOS 11, use SFAuthenticationSession
-  if (@available(iOS 11.0, *)) {
-    // SFAuthenticationSession doesn't work with guided access (rdar://40809553)
-    if (!openedUserAgent && !UIAccessibilityIsGuidedAccessEnabled()) {
-      __weak OIDExternalUserAgentIOS *weakSelf = self;
-      NSString *redirectScheme = request.redirectScheme;
-      SFAuthenticationSession *authenticationVC =
-          [[SFAuthenticationSession alloc] initWithURL:requestURL
-                                     callbackURLScheme:redirectScheme
-                                     completionHandler:^(NSURL * _Nullable callbackURL,
-                                                         NSError * _Nullable error) {
-        __strong OIDExternalUserAgentIOS *strongSelf = weakSelf;
-        if (!strongSelf) {
-            return;
-        }
-        strongSelf->_authenticationVC = nil;
-        if (callbackURL) {
-          [strongSelf->_session resumeExternalUserAgentFlowWithURL:callbackURL];
-        } else {
-          NSError *safariError =
-              [OIDErrorUtilities errorWithCode:OIDErrorCodeUserCanceledAuthorizationFlow
-                               underlyingError:error
-                                   description:@"User cancelled."];
-          [strongSelf->_session failExternalUserAgentFlowWithError:safariError];
-        }
-      }];
-      _authenticationVC = authenticationVC;
-      openedUserAgent = [authenticationVC start];
-    }
-  }
-  // iOS 9 and 10, use SFSafariViewController
-  if (@available(iOS 9.0, *)) {
-    if (!openedUserAgent && _presentingViewController) {
-      SFSafariViewController *safariVC =
-          [[SFSafariViewController alloc] initWithURL:requestURL];
-      safariVC.delegate = self;
-      _safariVC = safariVC;
-      [_presentingViewController presentViewController:safariVC animated:YES completion:nil];
-      openedUserAgent = YES;
-    }
-  }
-  // iOS 8 and earlier, use mobile Safari
-  if (!openedUserAgent){
-    openedUserAgent = [[UIApplication sharedApplication] openURL:requestURL];
-  }
+//  if (@available(iOS 11.0, *)) {
+//    // SFAuthenticationSession doesn't work with guided access (rdar://40809553)
+//    if (!openedUserAgent && !UIAccessibilityIsGuidedAccessEnabled()) {
+//      __weak OIDExternalUserAgentIOS *weakSelf = self;
+//      NSString *redirectScheme = request.redirectScheme;
+//      SFAuthenticationSession *authenticationVC =
+//          [[SFAuthenticationSession alloc] initWithURL:requestURL
+//                                     callbackURLScheme:redirectScheme
+//                                     completionHandler:^(NSURL * _Nullable callbackURL,
+//                                                         NSError * _Nullable error) {
+//        __strong OIDExternalUserAgentIOS *strongSelf = weakSelf;
+//        if (!strongSelf) {
+//            return;
+//        }
+//        strongSelf->_authenticationVC = nil;
+//        if (callbackURL) {
+//          [strongSelf->_session resumeExternalUserAgentFlowWithURL:callbackURL];
+//        } else {
+//          NSError *safariError =
+//              [OIDErrorUtilities errorWithCode:OIDErrorCodeUserCanceledAuthorizationFlow
+//                               underlyingError:error
+//                                   description:@"User cancelled."];
+//          [strongSelf->_session failExternalUserAgentFlowWithError:safariError];
+//        }
+//      }];
+//      _authenticationVC = authenticationVC;
+//      openedUserAgent = [authenticationVC start];
+//    }
+//  }
+//  // iOS 9 and 10, use SFSafariViewController
+//  if (@available(iOS 9.0, *)) {
+//    if (!openedUserAgent && _presentingViewController) {
+//      SFSafariViewController *safariVC =
+//          [[SFSafariViewController alloc] initWithURL:requestURL];
+//      safariVC.delegate = self;
+//      _safariVC = safariVC;
+//      [_presentingViewController presentViewController:safariVC animated:YES completion:nil];
+//      openedUserAgent = YES;
+//    }
+//  }
+//  // iOS 8 and earlier, use mobile Safari
+//  if (!openedUserAgent){
+//    openedUserAgent = [[UIApplication sharedApplication] openURL:requestURL];
+//  }
 
   if (!openedUserAgent) {
     [self cleanUp];
@@ -199,8 +199,8 @@ NS_ASSUME_NONNULL_BEGIN
   
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpartial-availability"
-  SFSafariViewController *safariVC = _safariVC;
-  SFAuthenticationSession *authenticationVC = _authenticationVC;
+//  SFSafariViewController *safariVC = _safariVC;
+//  SFAuthenticationSession *authenticationVC = _authenticationVC;
   ASWebAuthenticationSession *webAuthenticationVC = _webAuthenticationVC;
 #pragma clang diagnostic pop
   
@@ -210,13 +210,13 @@ NS_ASSUME_NONNULL_BEGIN
     // dismiss the ASWebAuthenticationSession
     [webAuthenticationVC cancel];
     if (completion) completion();
-  } else if (authenticationVC) {
-    // dismiss the SFAuthenticationSession
-    [authenticationVC cancel];
-    if (completion) completion();
-  } else if (safariVC) {
-    // dismiss the SFSafariViewController
-    [safariVC dismissViewControllerAnimated:YES completion:completion];
+//  } else if (authenticationVC) {
+//    // dismiss the SFAuthenticationSession
+//    [authenticationVC cancel];
+//    if (completion) completion();
+//  } else if (safariVC) {
+//    // dismiss the SFSafariViewController
+//    [safariVC dismissViewControllerAnimated:YES completion:completion];
   } else {
     if (completion) completion();
   }
@@ -225,8 +225,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)cleanUp {
   // The weak references to |_safariVC| and |_session| are set to nil to avoid accidentally using
   // them while not in an authorization flow.
-  _safariVC = nil;
-  _authenticationVC = nil;
+//  _safariVC = nil;
+//  _authenticationVC = nil;
   _webAuthenticationVC = nil;
   _session = nil;
   _externalUserAgentFlowInProgress = NO;
@@ -234,22 +234,22 @@ NS_ASSUME_NONNULL_BEGIN
 
 #pragma mark - SFSafariViewControllerDelegate
 
-- (void)safariViewControllerDidFinish:(SFSafariViewController *)controller NS_AVAILABLE_IOS(9.0) {
-  if (controller != _safariVC) {
-    // Ignore this call if the safari view controller do not match.
-    return;
-  }
-  if (!_externalUserAgentFlowInProgress) {
-    // Ignore this call if there is no authorization flow in progress.
-    return;
-  }
-  id<OIDExternalUserAgentSession> session = _session;
-  [self cleanUp];
-  NSError *error = [OIDErrorUtilities errorWithCode:OIDErrorCodeUserCanceledAuthorizationFlow
-                                    underlyingError:nil
-                                        description:@"No external user agent flow in progress."];
-  [session failExternalUserAgentFlowWithError:error];
-}
+//- (void)safariViewControllerDidFinish:(SFSafariViewController *)controller NS_AVAILABLE_IOS(9.0) {
+//  if (controller != _safariVC) {
+//    // Ignore this call if the safari view controller do not match.
+//    return;
+//  }
+//  if (!_externalUserAgentFlowInProgress) {
+//    // Ignore this call if there is no authorization flow in progress.
+//    return;
+//  }
+//  id<OIDExternalUserAgentSession> session = _session;
+//  [self cleanUp];
+//  NSError *error = [OIDErrorUtilities errorWithCode:OIDErrorCodeUserCanceledAuthorizationFlow
+//                                    underlyingError:nil
+//                                        description:@"No external user agent flow in progress."];
+//  [session failExternalUserAgentFlowWithError:error];
+//}
 
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 130000
 #pragma mark - ASWebAuthenticationPresentationContextProviding
@@ -265,4 +265,4 @@ NS_ASSUME_NONNULL_END
 
 #endif // !TARGET_OS_MACCATALYST
 
-#endif // TARGET_OS_IOS || TARGET_OS_MACCATALYST
+#endif // TARGET_OS_IOS || TARGET_OS_MACCATALYST || TARGET_OS_VISION
